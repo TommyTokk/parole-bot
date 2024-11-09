@@ -51,12 +51,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         app.current_screen = CurrentScreen::Exiting;
                     }
                     KeyCode::Tab => {
-                        app.current_screen = CurrentScreen::Editing;
-                        app.currently_editing = Some(CurrentlyEditing::TileColor);
+                        app.current_screen = CurrentScreen::EditingTileChar;
+                        app.currently_editing = Some(CurrentlyEditing::TileChar);
                     }
                     _ => {}
                 },
-                CurrentScreen::Editing => match key.code {
+                CurrentScreen::EditingTileChar => match key.code {
                     KeyCode::Esc => {
                         app.current_screen = CurrentScreen::Main;
                         app.currently_editing = None;
@@ -71,6 +71,25 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         for upper_c in c.to_uppercase() {
                             app.insert_char(upper_c);
                         }
+                    }
+                    _ => {}
+                },
+                CurrentScreen::EditingTileColor => match key.code {
+                    KeyCode::Esc => {
+                        app.current_screen = CurrentScreen::Main;
+                        app.currently_editing = None;
+                    }
+                    KeyCode::Up => {
+                        app.go_next_color();
+                    }
+                    KeyCode::Down => {
+                        app.go_prev_color();
+                    }
+                    KeyCode::Right => {
+                        todo!()
+                    }
+                    KeyCode::Left => {
+                        todo!()
                     }
                     _ => {}
                 },

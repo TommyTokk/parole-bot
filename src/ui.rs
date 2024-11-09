@@ -6,7 +6,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use crate::app::{App, CurrentScreen, CurrentlyEditing};
+use crate::app::{App, CurrentScreen, CurrentlyEditing, TileColor};
 
 pub fn ui(frame: &mut Frame, app: &mut App) {
     // Layout generale: titolo, corpo principale, e footer
@@ -79,16 +79,18 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
             .split(*row_chunk);
 
         for (col_idx, cell_chunk) in row_layout.iter().enumerate() {
-            let cell_content = &app.tiles_grid.tiles[row_idx][col_idx];
-            let cell_block = Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(Color::White));
+            let tile = &app.tiles_grid.tiles[row_idx][col_idx];
+            
+            // Definire lo stile della tessera in base a TileColor e se è selezionata
+            let tile_style = Style::default()
+                .fg(tile.color.to_color())  // Usa il colore della tessera
+                .bg(if tile.selected { app.selected_tile.color.to_color() } else { Color::Reset });  // Evidenzia tessera selezionata
 
             let cell_paragraph = Paragraph::new(Span::styled(
-                cell_content.clone(),
-                Style::default().fg(Color::LightBlue),
+                tile.character.to_string(),
+                tile_style,
             ))
-            .block(cell_block)
+            .block(Block::default().borders(Borders::ALL))
             .alignment(Alignment::Center);  // Centra il testo all'interno del quadrato
 
             frame.render_widget(cell_paragraph, *cell_chunk);
@@ -125,8 +127,11 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     let current_navigation_text = vec![
         match app.current_screen {
             CurrentScreen::Main => Span::styled("Normal Mode", Style::default().fg(Color::Green)),
-            CurrentScreen::Editing => {
-                Span::styled("Editing Mode", Style::default().fg(Color::Yellow))
+            CurrentScreen::EditingTileChar => {
+                Span::styled("Editing tile char Mode", Style::default().fg(Color::Yellow))
+            }
+            CurrentScreen::EditingTileColor => {
+                Span::styled("Editing tile color Mode", Style::default().fg(Color::Yellow))
             }
             CurrentScreen::Exiting => Span::styled("Exiting", Style::default().fg(Color::LightRed)),
         }
@@ -137,6 +142,9 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
                 match editing {
                     CurrentlyEditing::TileColor => {
                         Span::styled("Editing Tile Color", Style::default().fg(Color::Yellow))
+                    }
+                    CurrentlyEditing::TileChar => {
+                        Span::styled("Editing Tile Char", Style::default().fg(Color::Yellow))
                     }
                 }
             } else {
@@ -154,8 +162,12 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
                 "(q) to quit",
                 Style::default().fg(Color::Red),
             ),
-            CurrentScreen::Editing => Span::styled(
+            CurrentScreen::EditingTileChar => Span::styled(
                 "(Space) to toggle color | (q) to quit",
+                Style::default().fg(Color::Red),
+            ),
+            CurrentScreen::EditingTileColor => Span::styled(
+                "(q) to quit",
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::Exiting => Span::styled(
