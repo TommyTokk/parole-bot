@@ -1,5 +1,4 @@
-
-use ratatui::{style::Color, widgets::{ListState, TableState}};
+use ratatui::{style::Color, widgets::TableState};
 
 #[derive(Copy, Clone)]
 pub enum CurrentScreen {
@@ -51,251 +50,94 @@ pub struct TilesGrid {
 
 pub struct App {
     pub tiles_grid: TilesGrid,
-    pub selected_tile: Tile,
+    pub selected_tile: (usize, usize),
     pub current_screen: CurrentScreen,
     pub currently_editing: Option<CurrentlyEditing>,
-    pub list_state: ListState,
     pub table_state: TableState,
-
 }
 
 impl App {
     pub fn new() -> App {
         let tiles_grid = TilesGrid {
-            tiles: vec![vec![
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (0, 0),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (0, 1),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (0, 2),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (0, 3),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (0, 4),
-                },
-            ],
-            vec![
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (1, 0),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (1, 1),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (1, 2),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (1, 3),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (1, 4),
-                },
-            ],
-            vec![
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (2, 0),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (2, 1),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (2, 2),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (2, 3),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (2, 4),
-                },
-            ],
-            vec![
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (3, 0),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (3, 1),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (3, 2),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (3, 3),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (3, 4),
-                },
-            ],
-            vec![
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (4, 0),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (4, 1),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (4, 2),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (4, 3),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (4, 4),
-                },
-            ],
-            vec![
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (5, 0),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (5, 1),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (5, 2),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (5, 3),
-                },
-                Tile {
-                    character: ' ',
-                    color: TileColor::Normal,
-                    selected: false,
-                    position: (5, 4),
-                },
-            ]],
+            tiles: (0..6).map(|row| {
+                (0..5).map(|col| {
+                    Tile {
+                        character: ' ',
+                        color: TileColor::Normal,
+                        selected: false,
+                        position: (row, col),
+                    }
+                }).collect()
+            }).collect(),
         };
+        
+
+        let mut table_state = TableState::default();
+        table_state.select(Some(0)); // Seleziona la prima cella per impostazione predefinita
+
         App {
             tiles_grid,
-            selected_tile: Tile {
-                character: ' ',
-                color: TileColor::Normal,
-                selected: false,
-                position: (0, 0),
-            },
+            selected_tile: (0, 0),
             current_screen: CurrentScreen::Main,
             currently_editing: None,
-            list_state: ListState::default(),
-            table_state: TableState::default(),
+            table_state,
         }
     }
 
     pub fn insert_char(&mut self, c: char) {
-        let (row, col) = self.selected_tile.position;
-        self.tiles_grid.tiles[row][col].character = c;
-        
-        if col < 4 {
-            self.selected_tile.position = (row, col + 1);
+        // Ottieni le coordinate della cella selezionata
+        let (row, col) = self.selected_tile;
+
+        // Inserisci il carattere nella cella selezionata
+        if let Some(tile) = self.tiles_grid.tiles.get_mut(row).and_then(|r| r.get_mut(col)) {
+            tile.character = c;
+        } else {
+            // Ritorna immediatamente se la posizione è invalida
+            return;
         }
 
+        // Passa alla cella successiva a destra, se non è l'ultima colonna
+        if col < 4 {
+            self.update_selected_tile(row, col + 1);
+            // Aggiorna lo stato della colonna nel TableState
+            self.table_state.select(Some(row * 5 + col + 1));
+        } 
+    }
+    
+    pub fn go_next_row(&mut self) {
+        // Ottieni le coordinate della cella selezionata
+        let (row, col) = self.selected_tile;
+
+        // Passa alla riga successiva, se non è l'ultima riga e se la colonna è l'ultima
+        if row < 5 && col == 4 {
+            self.update_selected_tile(row + 1, 0);
+            // Aggiorna lo stato della riga nel TableState
+            self.table_state.select(Some((row + 1) * 5));
+        }
+        
+    }
+
+    pub fn update_selected_tile(&mut self, nrow: usize, ncol: usize) {
+        // Controlla che la posizione sia valida prima di aggiornare la selezione
+        if nrow < self.tiles_grid.tiles.len() && ncol < self.tiles_grid.tiles[nrow].len() {
+            // Deselect the current tile
+            let (row, col) = self.selected_tile;
+            if let Some(tile) = self.tiles_grid.tiles.get_mut(row).and_then(|r| r.get_mut(col)) {
+                tile.selected = false;
+            }
+
+            // Set the new selected position
+            self.selected_tile = (nrow, ncol);
+            if let Some(new_tile) = self.tiles_grid.tiles.get_mut(nrow).and_then(|r| r.get_mut(ncol)) {
+                new_tile.selected = true;
+            }
+        }
     }
 
     pub fn remove_char(&mut self) {
-        let (row, col) = self.selected_tile.position;
-        self.tiles_grid.tiles[row][col].character = ' ';
-        if col > 0 {
-            self.selected_tile.position = (row, col - 1);
-        } else if row > 0 {
-            self.selected_tile.position = (row - 1, 4);
-        }
+        todo!()
     }
 
-    pub fn go_next_row(&mut self) {
-        let (row, col) = self.selected_tile.position;
-        if col == 4 && row < 5 {
-            self.selected_tile.position = (row + 1, 0);
-        }
-    }
 
     pub fn go_next_color(&mut self) {
         todo!()
@@ -304,5 +146,4 @@ impl App {
     pub fn go_prev_color(&mut self) {
         todo!()
     }
-
 }

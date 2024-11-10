@@ -3,10 +3,10 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
     Frame,
 };
-use crate::app::{App, CurrentScreen, CurrentlyEditing, TileColor};
+use crate::app::{self, App, CurrentScreen, CurrentlyEditing, TileColor};
 
 pub fn ui(frame: &mut Frame, app: &mut App) {
     // Layout generale: titolo, corpo principale, e footer
@@ -51,51 +51,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
 
     frame.render_widget(left_block, main_chunks[0]);
 
-    // Definiamo le dimensioni della griglia e i margini per centrarla
-    let grid_width = 5 * 7;  // 5 colonne con 7 unità di larghezza ciascuna
-    let grid_height = 6 * 3; // 6 righe con 3 unità di altezza ciascuna
-
-    let left_block_area = main_chunks[0];
-    let horizontal_margin = (left_block_area.width.saturating_sub(grid_width)) / 2;
-    let vertical_margin = (left_block_area.height.saturating_sub(grid_height)) / 2;
-
-    let grid_area = Rect {
-        x: left_block_area.x + horizontal_margin,
-        y: left_block_area.y + vertical_margin,
-        width: grid_width as u16,
-        height: grid_height as u16,
-    };
-
-    // Layout della griglia 5x6 all'interno del blocco sinistro centrato
-    let grid_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints((0..6).map(|_| Constraint::Length(3)).collect::<Vec<_>>())
-        .split(grid_area);
-
-    for (row_idx, row_chunk) in grid_chunks.iter().enumerate() {
-        let row_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints((0..5).map(|_| Constraint::Length(7)).collect::<Vec<_>>())  // 7 è la larghezza di ogni cella
-            .split(*row_chunk);
-
-        for (col_idx, cell_chunk) in row_layout.iter().enumerate() {
-            let tile = &app.tiles_grid.tiles[row_idx][col_idx];
-            
-            // Definire lo stile della tessera in base a TileColor e se è selezionata
-            let tile_style = Style::default()
-                .fg(tile.color.to_color())  // Usa il colore della tessera
-                .bg(if tile.selected { app.selected_tile.color.to_color() } else { Color::Reset });  // Evidenzia tessera selezionata
-
-            let cell_paragraph = Paragraph::new(Span::styled(
-                tile.character.to_string(),
-                tile_style,
-            ))
-            .block(Block::default().borders(Borders::ALL))
-            .alignment(Alignment::Center);  // Centra il testo all'interno del quadrato
-
-            frame.render_widget(cell_paragraph, *cell_chunk);
-        }
-    }
+    render_grid(&main_chunks, app, frame);
 
     // Blocchi destri
     let right_upper = Block::default()
@@ -187,4 +143,65 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
 
     frame.render_widget(mode_footer, footer_chunks[0]);
     frame.render_widget(key_notes_footer, footer_chunks[1]);
+}
+
+pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {
+    // Creazione delle righe della tabella
+    let rows = app.tiles_grid.tiles.iter().enumerate().map(|(row_idx, row)| {
+        let cells = row.iter().enumerate().map(|(col_idx, tile)| {
+            // Verifica se questa è la cella selezionata
+            let is_selected = app.selected_tile == (row_idx, col_idx);
+            
+            // Imposta lo stile della cella in base al colore e alla selezione
+            let mut style = Style::default().fg(tile.color.to_color());
+            if is_selected {
+                style = style.bg(app::TileColor::to_color(&app::TileColor::Selected));  // Colore speciale per la cella selezionata
+            }
+
+            // Crea la cella con il carattere e lo stile
+            Cell::from(Span::styled(tile.character.to_string(), style))})
+            .collect::<Vec<_>>();  // Assicurati di avere un `Vec<Cell>`
+
+
+        Row::new(cells)
+    }).collect::<Vec<_>>();  // Assicurati di avere un `Vec<Row>`
+
+    // Define the widths for the table columns
+    let widths = vec![Constraint::Length(7); app.tiles_grid.tiles[0].len()];
+
+    // Calculate the available space for the table within the left chunk
+    let left_chunk = main_chunks[0];
+    let table_width = widths.iter().map(|c| match c {
+        Constraint::Length(l) => *l,
+        _ => 0,
+    }).sum::<u16>();
+    let available_width = left_chunk.width - table_width;
+
+    //divide left chunk in 3 parts with 30%, 40% and 30% width
+    let table_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(30),
+            Constraint::Percentage(40),
+            Constraint::Percentage(30),
+        ])
+        .split(left_chunk);
+
+    //divide the table layout vertically in 3 parts with 10%, 80% and 10% height
+    let table_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage(10),
+            Constraint::Percentage(80),
+            Constraint::Percentage(10),
+        ])
+        .split(table_layout[1]);
+
+    // Configure the table with rows and other properties
+    let table = Table::new(rows, widths)
+        .block(Block::default().borders(Borders::ALL))  // Every column is wide 7 units
+        .highlight_style(Style::default().bg(app::TileColor::to_color(&app::TileColor::Selected)));  // Highlighting style
+
+    // Render the table within the centered layout
+    frame.render_stateful_widget(table, table_layout[1], &mut app.table_state);
 }
