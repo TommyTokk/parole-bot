@@ -51,6 +51,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     KeyCode::Char('q') => {
                         app.current_screen = CurrentScreen::Exiting;
                     }
+                    
                     KeyCode::Tab => {
                         app.current_screen = CurrentScreen::EditingTileChar;
                         app.currently_editing = Some(CurrentlyEditing::TileChar);
@@ -68,10 +69,20 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     KeyCode::Backspace => {
                         app.remove_char();
                     }
+                    KeyCode::Left =>{
+                        app.go_prev_col();
+                    }
+                    KeyCode::Right =>{
+                        app.go_next_col();
+                    }
                     KeyCode::Char(c) => {
                         for upper_c in c.to_uppercase() {
                             app.insert_char(upper_c);
                         }
+                    }
+                    KeyCode::Tab => {
+                        app.current_screen = CurrentScreen::EditingTileColor;
+                        app.currently_editing = Some(CurrentlyEditing::TileColor);
                     }
                     _ => {}
                 },
@@ -80,18 +91,26 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         app.current_screen = CurrentScreen::Main;
                         app.currently_editing = None;
                     }
-                    KeyCode::Up => {
+                    KeyCode::Left =>{
+                        app.go_prev_col();
+                    }
+                    KeyCode::Right =>{
+                        app.go_next_col();
+                    }
+                    KeyCode::Up =>{
+                        app.go_prev_row();
+                    }
+                    KeyCode::Down =>{
+                        app.go_next_row();
+                    }
+                    KeyCode::Char('n') => {
                         app.go_next_color();
                     }
-                    KeyCode::Down => {
-                        app.go_prev_color();
+                    KeyCode::Tab => {
+                        app.current_screen = CurrentScreen::EditingTileChar;
+                        app.currently_editing = Some(CurrentlyEditing::TileChar);
                     }
-                    KeyCode::Right => {
-                        todo!()
-                    }
-                    KeyCode::Left => {
-                        todo!()
-                    }
+                    
                     _ => {}
                 },
                 CurrentScreen::Exiting => {

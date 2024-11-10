@@ -1,3 +1,5 @@
+use std::cell;
+
 use crossterm::queue;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -119,11 +121,11 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::EditingTileChar => Span::styled(
-                "(Space) to toggle color | (q) to quit",
+                "(q) quit | (U/D) change row | (L/R) change column | (Enter) next row | (Esc) exit editing",
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::EditingTileColor => Span::styled(
-                "(q) to quit",
+                "(q) to quit | (L/R) change column | (U) change color",
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::Exiting => Span::styled(
@@ -155,15 +157,17 @@ pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {
             // Imposta lo stile della cella in base al colore e alla selezione
             let mut style = Style::default().fg(tile.color.to_color());
             if is_selected {
-                style = style.bg(app::TileColor::to_color(&app::TileColor::Selected));  // Colore speciale per la cella selezionata
+                style = style.bg(Color::White);  // Colore speciale per la cella selezionata
             }
 
+            let cell_content = format!("{:^3}", tile.character.to_string());
+
             // Crea la cella con il carattere e lo stile
-            Cell::from(Span::styled(tile.character.to_string(), style))})
+            Cell::from(Span::styled(cell_content, style))})
             .collect::<Vec<_>>();  // Assicurati di avere un `Vec<Cell>`
 
 
-        Row::new(cells)
+        Row::new(cells).height(3)
     }).collect::<Vec<_>>();  // Assicurati di avere un `Vec<Row>`
 
     // Define the widths for the table columns
@@ -171,19 +175,15 @@ pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {
 
     // Calculate the available space for the table within the left chunk
     let left_chunk = main_chunks[0];
-    let table_width = widths.iter().map(|c| match c {
-        Constraint::Length(l) => *l,
-        _ => 0,
-    }).sum::<u16>();
-    let available_width = left_chunk.width - table_width;
+    
 
     //divide left chunk in 3 parts with 30%, 40% and 30% width
     let table_layout = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(30),
-            Constraint::Percentage(40),
-            Constraint::Percentage(30),
+            Constraint::Percentage(20),
+            Constraint::Percentage(60),
+            Constraint::Percentage(20),
         ])
         .split(left_chunk);
 
@@ -200,7 +200,7 @@ pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {
     // Configure the table with rows and other properties
     let table = Table::new(rows, widths)
         .block(Block::default().borders(Borders::ALL))  // Every column is wide 7 units
-        .highlight_style(Style::default().bg(app::TileColor::to_color(&app::TileColor::Selected)));  // Highlighting style
+        .highlight_style(Style::default());  // Highlighting style
 
     // Render the table within the centered layout
     frame.render_stateful_widget(table, table_layout[1], &mut app.table_state);
