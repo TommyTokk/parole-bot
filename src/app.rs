@@ -1,4 +1,7 @@
-use ratatui::{style::Color, widgets::TableState};
+use ratatui::{style::Color, widgets::{ListState, TableState}};
+
+
+use crate::solver::Solver;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum CurrentScreen {
@@ -10,14 +13,13 @@ pub enum CurrentScreen {
 
 
 
-#[derive(Copy, Clone)]
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum CurrentlyEditing {
     TileChar,
     TileColor,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum TileColor {
     CorrectPlace,
     Absent,
@@ -54,6 +56,8 @@ pub struct App {
     pub current_screen: CurrentScreen,
     pub currently_editing: Option<CurrentlyEditing>,
     pub table_state: TableState,
+    pub next_possible_words: Vec<String>,
+    pub listState: ListState,
 }
 
 impl App {
@@ -75,12 +79,17 @@ impl App {
         let mut table_state = TableState::default();
         table_state.select(Some(0)); // Seleziona la prima cella per impostazione predefinita
 
+        let mut listState = ListState::default();
+        listState.select(Some(0));
+
         App {
             tiles_grid,
             selected_tile: (0, 0),
             current_screen: CurrentScreen::Main,
             currently_editing: None,
             table_state,
+            next_possible_words: Vec::new(),
+            listState,
         }
     }
 
@@ -225,6 +234,29 @@ impl App {
                 TileColor::WrongPlace => tile.color = TileColor::Normal,
             }
         }
+    }
+
+    pub fn calculate_next_word(&mut self){
+        let current_row_tile: &Vec<Tile> = &self.tiles_grid.tiles[self.selected_tile.0];
+
+        let word: String = current_row_tile.iter().map(|tile| tile.character).collect();
+        let color_state = self.get_color_state(current_row_tile);
+
+        let solver = Solver::new();
+        self.next_possible_words = solver.get_next_possible_words(&word, &color_state);
+    }
+
+    pub fn get_color_state(&self, row: &Vec<Tile>) -> String{
+        let mut color_state = String::new();
+        for tile in row{
+            match tile.color {
+                TileColor::Normal => color_state.push('W'),
+                TileColor::CorrectPlace => color_state.push('G'),
+                TileColor::Absent => color_state.push('R'),
+                TileColor::WrongPlace => color_state.push('Y'),
+            }
+        }
+        color_state
     }
     
 }

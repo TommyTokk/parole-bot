@@ -11,6 +11,7 @@ use ratatui::{
 
 mod app;
 mod ui;
+pub mod solver;
 use crate::{
     app::{App, CurrentScreen, CurrentlyEditing},
     ui::ui,
@@ -110,7 +111,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         app.current_screen = CurrentScreen::EditingTileChar;
                         app.currently_editing = Some(CurrentlyEditing::TileChar);
                     }
-                    
+                    KeyCode::Enter =>{
+                        app.calculate_next_word();
+                    }
                     _ => {}
                 },
                 CurrentScreen::Exiting => {
