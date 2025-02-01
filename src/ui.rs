@@ -33,6 +33,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     .block(title_block)
     .alignment(Alignment::Center);
 
+
     frame.render_widget(title, chunks[0]);
 
     // Layout principale: sinistra (griglia) e destra (altre informazioni)
@@ -58,18 +59,37 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     // Blocchi destri
     let right_upper = Block::default()
         .borders(Borders::ALL)
-        .title("Right Upper");
+        .title("Top 3 Suggested Words");
 
     let right_bottom = Block::default()
         .borders(Borders::ALL)
         .title("Right Bottom");
 
-    let right_upper_paragraph = Paragraph::new(Text::styled(
-        "Right Upper",
-        Style::default().fg(Color::White),
-    ))
-    .block(right_upper)
-    .alignment(Alignment::Center);
+    // Create text for top 3 words
+    let words_text = if app.next_possible_words.is_empty() {
+        vec![
+            Line::from(Span::styled(
+                "No suggestions available",
+                Style::default().fg(Color::DarkGray),
+            )),
+        ]
+    } else {
+        app.next_possible_words
+            .iter()
+            .take(3)
+            .enumerate()
+            .map(|(i, word)| {
+                Line::from(Span::styled(
+                    format!("{}. {}", i + 1, word),
+                    Style::default().fg(Color::Green),
+                ))
+            })
+            .collect::<Vec<Line>>()
+    };
+
+    let right_upper_paragraph = Paragraph::new(words_text)
+        .block(right_upper)
+        .alignment(Alignment::Left);
 
     let right_bottom_paragraph = Paragraph::new(Text::styled(
         "Right Bottom",
@@ -125,7 +145,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::EditingTileColor => Span::styled(
-                "(q) to quit | (L/R) change column | (U) change color",
+                "(q) to quit | (L/R) change column | (U) change color | (Enter) confirm colors",
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::Exiting => Span::styled(
@@ -148,60 +168,49 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
 }
 
 pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {
-    // Creazione delle righe della tabella
-    let rows = app.tiles_grid.tiles.iter().enumerate().map(|(row_idx, row)| {
-        let cells = row.iter().enumerate().map(|(col_idx, tile)| {
-            // Verifica se questa è la cella selezionata
-            let is_selected = app.selected_tile == (row_idx, col_idx);
-            
-            // Imposta lo stile della cella in base al colore e alla selezione
-            let mut style = Style::default().fg(tile.color.to_color());
-            if is_selected {
-                style = style.bg(Color::White);  // Colore speciale per la cella selezionata
-            }
-
-            let cell_content = format!("{:^3}", tile.character.to_string());
-
-            // Crea la cella con il carattere e lo stile
-            Cell::from(Span::styled(cell_content, style))})
-            .collect::<Vec<_>>();  // Assicurati di avere un `Vec<Cell>`
-
-
-        Row::new(cells).height(3)
-    }).collect::<Vec<_>>();  // Assicurati di avere un `Vec<Row>`
-
-    // Define the widths for the table columns
-    let widths = vec![Constraint::Length(7); app.tiles_grid.tiles[0].len()];
-
-    // Calculate the available space for the table within the left chunk
-    let left_chunk = main_chunks[0];
-    
-
-    //divide left chunk in 3 parts with 30%, 40% and 30% width
-    let table_layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(20),
-            Constraint::Percentage(60),
-            Constraint::Percentage(20),
-        ])
-        .split(left_chunk);
-
-    //divide the table layout vertically in 3 parts with 10%, 80% and 10% height
-    let table_layout = Layout::default()
+    // Create inner area with equal vertical padding
+    let inner_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage(10),
-            Constraint::Percentage(80),
-            Constraint::Percentage(10),
+            Constraint::Percentage(20),  // Top padding
+            Constraint::Percentage(60),  // Content area
+            Constraint::Percentage(20),  // Bottom padding
         ])
-        .split(table_layout[1]);
+        .split(main_chunks[0])[1];  // Get the middle section
 
-    // Configure the table with rows and other properties
+    let inner_area = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(3),  // Left padding
+            Constraint::Min(1),     // Content area
+            Constraint::Length(3),  // Right padding
+        ])
+        .split(inner_area)[1];  // Get the middle section
+
+    // Create rows as before
+    let rows = app.tiles_grid.tiles.iter().enumerate().map(|(row_idx, row)| {
+        let cells = row.iter().enumerate().map(|(col_idx, tile)| {
+            let is_selected = app.selected_tile == (row_idx, col_idx);
+            let mut style = Style::default().fg(tile.color.to_color());
+            if is_selected {
+                style = style.bg(Color::White);
+            }
+            let cell_content = format!("{:^12}", tile.character.to_string());
+            Cell::from(Span::styled(cell_content, style))
+        })
+        .collect::<Vec<_>>();
+
+        Row::new(cells).height(5)
+    }).collect::<Vec<_>>();
+
+    // Make columns fill the available space evenly
+    let widths = vec![Constraint::Percentage(20); app.tiles_grid.tiles[0].len()];
+
     let table = Table::new(rows, widths)
-        .block(Block::default().borders(Borders::ALL))  // Every column is wide 7 units
-        .highlight_style(Style::default());  // Highlighting style
+        .block(Block::default())
+        .style(Style::default())
+        .highlight_style(Style::default());
 
-    // Render the table within the centered layout
-    frame.render_stateful_widget(table, table_layout[1], &mut app.table_state);
+    // Render in the padded area
+    frame.render_stateful_widget(table, inner_area, &mut app.table_state);
 }

@@ -58,6 +58,7 @@ pub struct App {
     pub table_state: TableState,
     pub next_possible_words: Vec<String>,
     pub listState: ListState,
+    pub solver: Solver,
 }
 
 impl App {
@@ -90,6 +91,7 @@ impl App {
             table_state,
             next_possible_words: Vec::new(),
             listState,
+            solver: Solver::new(),
         }
     }
 
@@ -236,14 +238,13 @@ impl App {
         }
     }
 
-    pub fn calculate_next_word(&mut self){
+    pub fn calculate_next_word(&mut self) {
         let current_row_tile: &Vec<Tile> = &self.tiles_grid.tiles[self.selected_tile.0];
 
         let word: String = current_row_tile.iter().map(|tile| tile.character).collect();
         let color_state = self.get_color_state(current_row_tile);
 
-        let solver = Solver::new();
-        self.next_possible_words = solver.get_next_possible_words(&word, &color_state);
+        self.next_possible_words = self.solver.get_next_possible_words(&word, &color_state);
     }
 
     pub fn get_color_state(&self, row: &Vec<Tile>) -> String{
