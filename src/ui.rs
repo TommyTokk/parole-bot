@@ -168,15 +168,14 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
 }
 
 pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {
-    // Create inner area with equal vertical padding
+    // Create inner area with top padding
     let inner_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage(20),  // Top padding
-            Constraint::Percentage(60),  // Content area
-            Constraint::Percentage(20),  // Bottom padding
+            Constraint::Length(8),  // Top padding
+            Constraint::Percentage(100),  // Use remaining height for content area
         ])
-        .split(main_chunks[0])[1];  // Get the middle section
+        .split(main_chunks[0])[1];  // Get the content area after top padding
 
     let inner_area = Layout::default()
         .direction(Direction::Horizontal)

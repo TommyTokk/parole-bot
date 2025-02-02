@@ -143,42 +143,33 @@ impl App {
         }
         
         // Passa alla cella precedente a sinistra, se non è la prima colonna
-        if col > 0 {
-            self.update_selected_tile(row, col - 1);
-            // Aggiorna lo stato della colonna nel TableState
-            self.table_state.select(Some(row * 5 + col - 1));
-        }
+        //if col > 0 {
+        //    self.update_selected_tile(row, col - 1);
+        //    // Aggiorna lo stato della colonna nel TableState
+        //    self.table_state.select(Some(row * 5 + col - 1));
+        //}
         
         //passa alla riga precedente se la colonna è la prima
-        else if row > 0 {
-            self.update_selected_tile(row - 1, 4);
-            // Aggiorna lo stato della riga nel TableState
-            self.table_state.select(Some((row - 1) * 5 + 4));
-        }
+        //else if row > 0{
+        //    self.update_selected_tile(row - 1, 4);
+        //    // Aggiorna lo stato della riga nel TableState
+        //    self.table_state.select(Some((row - 1) * 5 + 4));
+        //}
         
     }
     
     pub fn go_next_row(&mut self) {
-        //TODO: Fare in modo che si possa scorrere solo su righe non vuote
-        // Ottieni le coordinate della cella selezionata
         let (row, col) = self.selected_tile;
-
-        if self.current_screen == CurrentScreen::EditingTileChar {
-            // Passa alla riga successiva, se non è l'ultima riga
-            if row < 5  && col == 4 {
+        // Check if we're at the last column
+        if col == 4 {
+            // Move to the first tile of the next row if not at the last row
+            if row < self.tiles_grid.tiles.len() - 1 {
                 self.update_selected_tile(row + 1, 0);
-                // Aggiorna lo stato della riga nel TableState
+                // Update table state
                 self.table_state.select(Some((row + 1) * 5));
             }
-        }else{
-            // Passa alla riga successiva, se non è l'ultima riga e se la colonna è l'ultima
-            if row < 5{
-                self.update_selected_tile(row + 1, col);
-                // Aggiorna lo stato della riga nel TableState
-                self.table_state.select(Some((row + 1) * 5 + col));
-            }
         }
-        
+        // Do nothing if not at the last column
     }
 
     pub fn go_prev_row(&mut self) {

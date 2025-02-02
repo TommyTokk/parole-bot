@@ -70,6 +70,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     KeyCode::Backspace => {
                         app.remove_char();
                     }
+                    KeyCode::Up =>{
+                        app.go_prev_row();
+                    }
+                    KeyCode::Down =>{
+                        app.go_next_row();
+                    }
                     KeyCode::Left =>{
                         app.go_prev_col();
                     }
