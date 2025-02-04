@@ -172,7 +172,7 @@ pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {
     let inner_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(8),  // Top padding
+            Constraint::Length(4),  // Reduced top padding from 8 to 2
             Constraint::Percentage(100),  // Use remaining height for content area
         ])
         .split(main_chunks[0])[1];  // Get the content area after top padding
@@ -194,12 +194,12 @@ pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {
             if is_selected {
                 style = style.bg(Color::White);
             }
-            let cell_content = format!("{:^12}", tile.character.to_string());
+            let cell_content = format!("{:^5}", tile.character.to_string());
             Cell::from(Span::styled(cell_content, style))
         })
         .collect::<Vec<_>>();
 
-        Row::new(cells).height(5)
+        Row::new(cells).height(4)
     }).collect::<Vec<_>>();
 
     // Make columns fill the available space evenly
@@ -207,9 +207,8 @@ pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {
 
     let table = Table::new(rows, widths)
         .block(Block::default())
-        .style(Style::default())
-        .highlight_style(Style::default());
+        .style(Style::default());
 
-    // Render in the padded area
-    frame.render_stateful_widget(table, inner_area, &mut app.table_state);
+    // Render the table without using stateful widget
+    frame.render_widget(table, inner_area);
 }

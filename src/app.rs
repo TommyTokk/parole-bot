@@ -76,9 +76,8 @@ impl App {
             }).collect(),
         };
         
-
         let mut table_state = TableState::default();
-        table_state.select(Some(0)); // Seleziona la prima cella per impostazione predefinita
+        table_state.select(Some(0));
 
         let mut listState = ListState::default();
         listState.select(Some(0));
