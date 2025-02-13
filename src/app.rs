@@ -234,7 +234,7 @@ impl App {
         let word: String = current_row_tile.iter().map(|tile| tile.character).collect();
         let color_state = self.get_color_state(current_row_tile);
 
-        self.next_possible_words = self.solver.get_next_possible_words(&word, &color_state);
+        self.next_possible_words = self.solver.get_next_possible_words(&word.to_lowercase(), &color_state);
     }
 
     pub fn get_color_state(&self, row: &Vec<Tile>) -> String{

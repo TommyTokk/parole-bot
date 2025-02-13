@@ -3,6 +3,18 @@ include!("../assets/wordlist.rs");
 include!("../assets/letter_frequencies.rs");
 
 use std::collections::HashMap;
+use std::fs::OpenOptions;
+use std::io::Write;
+
+// Logger function to write messages to a log file
+fn log_to_file(message: &str) {
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("debug.log")
+        .unwrap();
+    writeln!(file, "{}", message).unwrap();
+}
 
 pub struct Solver {
     pub words: Vec<String>,
@@ -13,8 +25,9 @@ pub struct Solver {
 
 impl Solver {
     pub fn new() -> Self {
+        let words_copy: Vec<String> = WORDS.iter().map(|&s| s.to_string()).collect();
         Solver {
-            words: WORDS.iter().map(|&s| s.to_string()).collect(),
+            words: words_copy.clone(),
             //valid_guesses: VALID_GUESSES.iter().map(|&s| s.to_string()).collect(),
             word_length: 5,
             word_frequencies: LETTER_FREQUENCIES.iter().copied().collect(),
@@ -22,78 +35,22 @@ impl Solver {
     }
 
     pub fn get_next_possible_words(&self, word: &str, color_state: &str) -> Vec<String> {
-        todo!()
+        let mut absent_chars: Vec<(char, usize)> = Vec::new();
+        let mut present_chars: Vec<(char, usize)> = Vec::new();
+        let mut wrong_placed_chars: Vec<(char, usize)> = Vec::new();
 
-        
-    }
-
-    fn remove_absent_letters(&self, word: &str, wrong_characters: Vec<char>, absent: Vec<usize>) -> Vec<String> {
-        let mut res: Vec<String> = Vec::new();
-        let word_chars: Vec<char> = word.chars().collect();
-        let correct_positions: Vec<(usize, char)> = word_chars.iter()
-            .enumerate()
-            .filter(|(i, _)| !absent.contains(i))
-            .map(|(i, &c)| (i, c))
-            .collect();
-
-        for w in self.words.iter() {
-            if w.chars().all(|c| !wrong_characters.contains(&c)) && 
-               correct_positions.iter().all(|(pos, c)| w.chars().nth(*pos).unwrap() == *c) {
-                res.push(w.clone());
+        for (i, c) in word.chars().enumerate() {
+            if color_state.chars().nth(i).unwrap() == 'R' {
+                absent_chars.push((c, i));
+            } else if color_state.chars().nth(i).unwrap() == 'G' {
+                present_chars.push((c, i));
+            } else if color_state.chars().nth(i).unwrap() == 'Y' {
+                wrong_placed_chars.push((c, i));
             }
         }
-        res
-    }
 
-    fn get_correct_positions(&self, word_chars: &[char], color_chars: &[char]) -> Vec<(usize, char)> {
-        word_chars.iter()
-            .zip(color_chars.iter())
-            .enumerate()
-            .filter(|(_, (_, &c))| c == 'G')
-            .map(|(i, (&w, _))| (i, w))
-            .collect()
-    }
-
-    fn get_misplaced_positions(&self, word_chars: &[char], color_chars: &[char]) -> Vec<(usize, char)> {
-        word_chars.iter()
-            .zip(color_chars.iter())
-            .enumerate()
-            .filter(|(_, (_, &c))| c == 'Y')
-            .map(|(i, (&w, _))| (i, w))
-            .collect()
-    }
-
-    fn get_absent_letters(&self, word_chars: &[char], color_chars: &[char]) -> Vec<char> {
-        word_chars.iter()
-            .zip(color_chars.iter())
-            .filter(|(_, &c)| c == 'R')
-            .map(|(&w, _)| w)
-            .collect()
-    }
-
-    fn is_word_valid(&self, word: &str, 
-                     correct_positions: &[(usize, char)],
-                     misplaced_positions: &[(usize, char)],
-                     absent_letters: &[char]) -> bool {
-        let w_chars: Vec<char> = word.chars().collect();
-        
-        // Check correct positions (green)
-        let correct_pos_match = correct_positions.iter()
-            .all(|&(pos, c)| w_chars[pos] == c);
-            
-        // Check misplaced letters (yellow)
-        let misplaced_match = misplaced_positions.iter()
-            .all(|&(pos, c)| w_chars.contains(&c) && w_chars[pos] != c);
-            
-        // Check absent letters (red/grey)
-        let absent_match = absent_letters.iter()
-            .all(|&c| {
-                let is_elsewhere = correct_positions.iter().any(|&(_, cc)| cc == c) ||
-                                 misplaced_positions.iter().any(|&(_, cc)| cc == c);
-                !w_chars.contains(&c) || is_elsewhere
-            });
-            
-        correct_pos_match && misplaced_match && absent_match
+        // Call the filter_words method to get the filtered list of words
+        self.filter_words(&self.words, &absent_chars, &present_chars, &wrong_placed_chars)
     }
 
     pub fn calculate_char_information(&self, char: char) -> f64 {
@@ -109,5 +66,52 @@ impl Solver {
             entropy += self.calculate_char_information(c);
         }
         entropy
+    }
+
+    pub fn filter_words(
+        &self,
+        words: &[String],
+        absent_chars: &Vec<(char, usize)>,
+        present_chars: &Vec<(char, usize)>,
+        wrong_placed_chars: &Vec<(char, usize)>
+    ) -> Vec<String> {
+        let filtered_words: Vec<String> = words.iter().filter(|word| {
+            // Check absent characters
+            for (c, _) in absent_chars {
+                if word.contains(*c) {
+                    //log_to_file(&format!("Filtering out word: {} because it contains absent character: {}", word, c));
+                    return false; // Word contains an absent character
+                }
+            }
+
+            // Check present characters
+            for (c, pos) in present_chars {
+                if word.chars().nth(*pos).unwrap_or(' ') != *c {
+                    //log_to_file(&format!("Filtering out word: {} because character: {} is not in the correct position: {}", word, c, pos));
+                    return false; // Character is not in the correct position
+                }
+            }
+
+            // Check wrong placed characters
+            for (c, pos) in wrong_placed_chars {
+                if word.chars().nth(*pos).unwrap_or(' ') == *c || !word.contains(*c) {
+                    //log_to_file(&format!("Filtering out word: {} because character: {} is either in the wrong position or not present", word, c));
+                    return false; // Character is either in the wrong position or not present
+                }
+            }
+
+            true // Word passed all checks
+        }).cloned().collect();
+
+        // Print the current word list after filtering
+        self.print_word_list();
+
+        filtered_words // Return the filtered words
+    }
+
+    pub fn print_word_list(&self) {
+        let separator = " | "; // Define your separator here
+        let word_list = self.words.join(separator);
+        log_to_file(&format!("Current word list: {}", word_list)); // Log to the debug file
     }
 }
