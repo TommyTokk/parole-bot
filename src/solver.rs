@@ -34,40 +34,65 @@ impl Solver {
         }
     }
 
-    pub fn get_next_possible_words(&self, word: &str, color_state: &str) -> Vec<String> {
-        let mut absent_chars: Vec<(char, usize)> = Vec::new();
-        let mut present_chars: Vec<(char, usize)> = Vec::new();
-        let mut wrong_placed_chars: Vec<(char, usize)> = Vec::new();
+    /// Given a guessed word and the feedback from comparing it to a candidate answer,
+    /// returns a string pattern where:
+    /// - 'G' indicates the letter is in the correct position (green),
+    /// - 'Y' indicates the letter is present but in a wrong position (yellow),
+    /// - 'R' indicates the letter is absent (black).
+    pub fn get_feedback_pattern(&self, guess: &str, answer: &str) -> String {
+        // Convert strings to vectors of characters.
+        let mut pattern = vec!['R'; self.word_length];
+        let mut answer_chars: Vec<char> = answer.chars().collect();
+        let guess_chars: Vec<char> = guess.chars().collect();
 
-        for (i, c) in word.chars().enumerate() {
-            if color_state.chars().nth(i).unwrap() == 'R' {
-                absent_chars.push((c, i));
-            } else if color_state.chars().nth(i).unwrap() == 'G' {
-                present_chars.push((c, i));
-            } else if color_state.chars().nth(i).unwrap() == 'Y' {
-                wrong_placed_chars.push((c, i));
+        // First pass: mark greens.
+        for i in 0..self.word_length {
+            if guess_chars[i] == answer_chars[i] {
+                pattern[i] = 'G';
+                // Mark this letter as used.
+                answer_chars[i] = '*';
             }
         }
-
-        // Call the filter_words method to get the filtered list of words
-        self.filter_words(&self.words, &absent_chars, &present_chars, &wrong_placed_chars)
+        // Second pass: mark yellows.
+        for i in 0..self.word_length {
+            if pattern[i] == 'G' {
+                continue;
+            }
+            if let Some(pos) = answer_chars.iter().position(|&c| c == guess_chars[i]) {
+                pattern[i] = 'Y';
+                // Mark the matched letter as used.
+                answer_chars[pos] = '*';
+            }
+        }
+        pattern.into_iter().collect()
     }
 
-    pub fn calculate_char_information(&self, char: char) -> f64 {
-        //Calculate the information of the character
-        let char_probability = self.word_frequencies[&char];
-        -char_probability.log2()
-    }
+    /// Calculates the expected information gain (entropy) of making a given guess,
+    /// given the current candidate answers. It does this by:
+    /// 1. Simulating the feedback pattern for each candidate answer.
+    /// 2. Building a distribution over these patterns.
+    /// 3. Computing the entropy of that distribution.
+    pub fn calculate_expected_entropy(&self, guess: &str, candidate_answers: &[String]) -> f64 {
+        let total = candidate_answers.len() as f64;
+        let mut pattern_counts: HashMap<String, usize> = HashMap::new();
 
-    pub fn calculate_word_entropy(&self, word: &str) -> f64 {
-        //Calculate the entropy of the word
+        // For each candidate answer, simulate the feedback pattern.
+        for answer in candidate_answers {
+            let pattern = self.get_feedback_pattern(guess, answer);
+            *pattern_counts.entry(pattern).or_insert(0) += 1;
+        }
+
+        // Compute the entropy: H = - Σ p(pattern) log₂(p(pattern))
         let mut entropy = 0.0;
-        for c in word.chars() {
-            entropy += self.calculate_char_information(c);
+        for &count in pattern_counts.values() {
+            let p = count as f64 / total;
+            entropy -= p * p.log2();
         }
         entropy
     }
 
+    /// Filters the words based on the absent characters (R), correctly placed characters (G),
+    /// and mis-placed characters (Y) as per the input feedback.
     pub fn filter_words(
         &self,
         words: &[String],
@@ -76,42 +101,72 @@ impl Solver {
         wrong_placed_chars: &Vec<(char, usize)>
     ) -> Vec<String> {
         let filtered_words: Vec<String> = words.iter().filter(|word| {
-            // Check absent characters
+            // Check absent characters.
             for (c, _) in absent_chars {
                 if word.contains(*c) {
-                    //log_to_file(&format!("Filtering out word: {} because it contains absent character: {}", word, c));
-                    return false; // Word contains an absent character
+                    return false;
                 }
             }
-
-            // Check present characters
+            // Check correctly placed characters.
             for (c, pos) in present_chars {
                 if word.chars().nth(*pos).unwrap_or(' ') != *c {
-                    //log_to_file(&format!("Filtering out word: {} because character: {} is not in the correct position: {}", word, c, pos));
-                    return false; // Character is not in the correct position
+                    return false;
                 }
             }
-
-            // Check wrong placed characters
+            // Check wrongly placed characters.
             for (c, pos) in wrong_placed_chars {
                 if word.chars().nth(*pos).unwrap_or(' ') == *c || !word.contains(*c) {
-                    //log_to_file(&format!("Filtering out word: {} because character: {} is either in the wrong position or not present", word, c));
-                    return false; // Character is either in the wrong position or not present
+                    return false;
                 }
             }
-
-            true // Word passed all checks
+            true
         }).cloned().collect();
 
-        // Print the current word list after filtering
+        // Log the current word list after filtering.
         self.print_word_list();
 
-        filtered_words // Return the filtered words
+        filtered_words
     }
 
+    /// Returns the current word list as a log entry.
     pub fn print_word_list(&self) {
-        let separator = " | "; // Define your separator here
+        let separator = " | ";
         let word_list = self.words.join(separator);
-        log_to_file(&format!("Current word list: {}", word_list)); // Log to the debug file
+        log_to_file(&format!("Current word list: {}", word_list));
+    }
+
+    /// Given a guess and the feedback state (using 'R', 'G', 'Y') for each letter,
+    /// first filters the word list and then calculates the expected entropy for each candidate word.
+    /// It returns the candidate words sorted by their expected entropy (information gain) in descending order.
+    pub fn get_next_possible_words(&self, word: &str, color_state: &str) -> Vec<String> {
+        let mut absent_chars: Vec<(char, usize)> = Vec::new();
+        let mut present_chars: Vec<(char, usize)> = Vec::new();
+        let mut wrong_placed_chars: Vec<(char, usize)> = Vec::new();
+
+        for (i, c) in word.chars().enumerate() {
+            let state = color_state.chars().nth(i).unwrap();
+            if state == 'R' {
+                absent_chars.push((c, i));
+            } else if state == 'G' {
+                present_chars.push((c, i));
+            } else if state == 'Y' {
+                wrong_placed_chars.push((c, i));
+            }
+        }
+
+        // First filter the words using the provided feedback.
+        let filtered_words = self.filter_words(&self.words, &absent_chars, &present_chars, &wrong_placed_chars);
+        let mut word_entropy: Vec<(String, f64)> = Vec::new();
+
+        // Now, for each filtered candidate, compute its expected information gain
+        // when used as a guess against the current candidate pool.
+        for candidate in &filtered_words {
+            let entropy = self.calculate_expected_entropy(candidate, &filtered_words);
+            word_entropy.push((candidate.to_string(), entropy));
+        }
+
+        // Sort the candidates by descending entropy (higher expected info gain first).
+        word_entropy.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        word_entropy.into_iter().map(|(word, _)| word).collect()
     }
 }
