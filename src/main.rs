@@ -1,4 +1,4 @@
-use std::{error::Error, io};
+use std::{error::Error, io, panic};
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -18,27 +18,48 @@ use crate::{
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
+    // Setup panic hook for proper cleanup
+    let original_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |panic_info| {
+        // First cleanup terminal
+        disable_raw_mode().unwrap();
+        execute!(io::stdout(), LeaveAlternateScreen, DisableMouseCapture).unwrap();
+        // Then call the original panic handler
+        original_hook(panic_info);
+    }));
+
+    // Setup terminal
     enable_raw_mode()?;
-    let mut stdout = io::stdout(); // This is a special case. Normally using stdout is fine
+    let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // create app and run it
+    // Create app and run it
     let mut app = App::new();
     let res = run_app(&mut terminal, &mut app);
 
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(io::stdout(), LeaveAlternateScreen, DisableMouseCapture)?;
-    terminal.show_cursor()?;
+    // Cleanup
+    cleanup_terminal()?;
+    
+    if let Err(err) = res {
+        println!("Error: {}", err);
+    }
 
     Ok(())
 }
 
+fn cleanup_terminal() -> Result<(), Box<dyn Error>> {
+    disable_raw_mode()?;
+    execute!(
+        io::stdout(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    Ok(())
+}
+
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<bool> {
-    
     loop {
         terminal.draw(|f| ui(f, app))?;
 
