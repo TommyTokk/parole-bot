@@ -1,4 +1,5 @@
 use ratatui::{style::Color, widgets::{ListState, TableState}};
+use std::sync::mpsc::{self, Receiver};
 
 
 use crate::solver::Solver;
@@ -51,6 +52,8 @@ pub struct TilesGrid {
 }
 
 pub struct App {
+    pub calculating_receiver: Option<Receiver<Vec<String>>>,
+    pub is_solving:bool,
     pub tiles_grid: TilesGrid,
     pub selected_tile: (usize, usize),
     pub current_screen: CurrentScreen,
@@ -83,6 +86,8 @@ impl App {
         listState.select(Some(0));
 
         App {
+            calculating_receiver: None,
+            is_solving: false,
             tiles_grid,
             selected_tile: (0, 0),
             current_screen: CurrentScreen::Main,
@@ -237,6 +242,26 @@ impl App {
         self.next_possible_words = self.solver.get_next_possible_words(&word.to_lowercase(), &color_state);
     }
 
+    pub fn calculate_next_possible_word(&mut self){
+        let current_row_tile: &Vec<Tile> = &self.tiles_grid.tiles[self.selected_tile.0];
+
+        let word: String = current_row_tile.iter().map(|tile| tile.character).collect();
+        let color_state = self.get_color_state(current_row_tile);
+
+        let solver = self.solver.clone();
+        let word_clone = word.to_lowercase();
+        let color_state_clone = color_state.clone();
+
+        let (tx, rx) = mpsc::channel();
+        self.calculating_receiver = Some(rx);
+        self.is_solving = true;
+
+        std::thread::spawn(move || {
+            let next_possible_words = solver.get_next_possible_words(&word_clone, &color_state_clone);
+            tx.send(next_possible_words).unwrap();
+        });
+    }
+
     pub fn get_color_state(&self, row: &Vec<Tile>) -> String{
         let mut color_state = String::new();
         for tile in row{
@@ -248,6 +273,23 @@ impl App {
             }
         }
         color_state
+    }
+
+    pub fn update(&mut self){
+        if let Some(receiver) = &self.calculating_receiver{
+            match receiver.try_recv(){
+                Ok(words) => {
+                    self.next_possible_words = words;
+                    self.calculating_receiver = None;
+                    self.is_solving = false;
+                },
+                Err(mpsc::TryRecvError::Empty) => {},
+                Err(mpsc::TryRecvError::Disconnected) => {
+                    self.calculating_receiver = None;
+                    self.is_solving = false;
+                }
+            }
+        }
     }
     
 }

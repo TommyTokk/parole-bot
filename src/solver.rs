@@ -16,6 +16,7 @@ fn log_to_file(message: &str) {
     writeln!(file, "{}", message).unwrap();
 }
 
+#[derive(Clone)]
 pub struct Solver {
     pub words: Vec<String>,
     //pub valid_guesses: Vec<String>,
@@ -90,6 +91,8 @@ impl Solver {
         }
         entropy
     }
+
+    //TODO: Check for a possible bug in word filterig
 
     /// Filters the words based on the absent characters (R), correctly placed characters (G),
     /// and mis-placed characters (Y) as per the input feedback.

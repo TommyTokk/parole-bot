@@ -11,6 +11,8 @@ use ratatui::{
 use crate::app::{self, App, CurrentScreen, CurrentlyEditing, TileColor};
 
 pub fn ui(frame: &mut Frame, app: &mut App) {
+    // Update app state first
+    app.update();
     // Layout generale: titolo, corpo principale, e footer
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -66,13 +68,16 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         .title("Right Bottom");
 
     // Create text for top 3 words
-    let words_text = if app.next_possible_words.is_empty() {
-        vec![
-            Line::from(Span::styled(
-                "No suggestions available",
-                Style::default().fg(Color::DarkGray),
-            )),
-        ]
+    let words_text = if app.is_solving {
+        vec![Line::from(Span::styled(
+            "Calculating next words...",
+            Style::default().fg(Color::Yellow),
+        ))]
+    } else if app.next_possible_words.is_empty() {
+        vec![Line::from(Span::styled(
+            "No suggestions available",
+            Style::default().fg(Color::DarkGray),
+        ))]
     } else {
         app.next_possible_words
             .iter()
