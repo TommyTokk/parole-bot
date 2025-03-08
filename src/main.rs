@@ -153,7 +153,7 @@ fn run_app<B: Backend>(
                             app.currently_editing = Some(CurrentlyEditing::TileChar);
                         }
                         KeyCode::Enter => {
-                            app.calculate_next_word();
+                            app.calculate_next_possible_word();
                             app.current_screen = CurrentScreen::Main;
                             app.currently_editing = None;
                         }

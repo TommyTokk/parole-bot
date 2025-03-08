@@ -22,6 +22,7 @@ pub struct Solver {
     //pub valid_guesses: Vec<String>,
     pub word_length: usize,
     pub word_frequencies: HashMap<char, f64>,
+    pub previous_words: Vec<(String, String)>
 }
 
 impl Solver {
@@ -32,6 +33,7 @@ impl Solver {
             //valid_guesses: VALID_GUESSES.iter().map(|&s| s.to_string()).collect(),
             word_length: 5,
             word_frequencies: LETTER_FREQUENCIES.iter().copied().collect(),
+            previous_words: Vec::new()
         }
     }
 
@@ -171,5 +173,14 @@ impl Solver {
         // Sort the candidates by descending entropy (higher expected info gain first).
         word_entropy.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
         word_entropy.into_iter().map(|(word, _)| word).collect()
+    }
+
+    pub fn add_used_word(&mut self, word: &str, color_state: &str) {
+        self.previous_words.push((word.to_string(), color_state.to_string()));
+
+        self.words.retain(|w| w != word);
+
+        log_to_file(&format!("Word '{}' used. Remaining words: {}", 
+                           word, self.words.len()));
     }
 }
