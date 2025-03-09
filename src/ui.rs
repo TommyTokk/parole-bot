@@ -217,3 +217,7 @@ pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {
     // Render the table without using stateful widget
     frame.render_widget(table, inner_area);
 }
+
+pub fn plot_graph(){
+    
+}

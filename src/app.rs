@@ -251,7 +251,7 @@ impl App {
         let word: String = current_row_tile.iter().map(|tile| tile.character).collect();
         let color_state = self.get_color_state(current_row_tile);
 
-        let solver = self.solver.clone();
+        let mut solver = self.solver.clone();
         let word_clone = word.to_lowercase();
         let color_state_clone = color_state.clone();
 
