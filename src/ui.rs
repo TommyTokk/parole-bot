@@ -218,6 +218,3 @@ pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {
     frame.render_widget(table, inner_area);
 }
 
-pub fn plot_graph(){
-    
-}
