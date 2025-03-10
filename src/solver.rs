@@ -102,8 +102,6 @@ impl Solver {
         entropy
     }
 
-    //TODO: Check for a possible bug in word filterig
-
     /// Filters the words based on the absent characters (R), correctly placed characters (G),
     /// and mis-placed characters (Y) as per the input feedback.
     pub fn filter_words(

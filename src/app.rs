@@ -233,17 +233,18 @@ impl App {
         }
     }
 
-    pub fn calculate_next_word(&mut self) {
-        let current_row_tile = &self.tiles_grid.tiles[self.selected_tile.0];
-        let word: String = current_row_tile.iter().map(|tile| tile.character).collect();
-        let color_state = self.get_color_state(current_row_tile);
+    
+    // pub fn calculate_next_word(&mut self) {
+    //     let current_row_tile = &self.tiles_grid.tiles[self.selected_tile.0];
+    //     let word: String = current_row_tile.iter().map(|tile| tile.character).collect();
+    //     let color_state = self.get_color_state(current_row_tile);
         
-        // First, add this word to used words
-        self.solver.add_used_word(&word.to_lowercase(), &color_state);
+    //     // First, add this word to used words
+    //     self.solver.add_used_word(&word.to_lowercase(), &color_state);
         
-        // Then get the next possible words
-        self.next_possible_words = self.solver.get_next_possible_words(&word.to_lowercase(), &color_state);
-    }
+    //     // Then get the next possible words
+    //     self.next_possible_words = self.solver.get_next_possible_words(&word.to_lowercase(), &color_state);
+    // }
 
     pub fn calculate_next_possible_word(&mut self){
         let current_row_tile: &Vec<Tile> = &self.tiles_grid.tiles[self.selected_tile.0];
