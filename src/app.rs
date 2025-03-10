@@ -146,12 +146,12 @@ impl App {
             tile.character = ' ';
         }
         
-        // Passa alla cella precedente a sinistra, se non è la prima colonna
-        //if col > 0 {
-        //    self.update_selected_tile(row, col - 1);
-        //    // Aggiorna lo stato della colonna nel TableState
-        //    self.table_state.select(Some(row * 5 + col - 1));
-        //}
+        // Go to the previous cell if not in the first row
+        if col > 0 {
+            self.update_selected_tile(row, col - 1);
+           // update the tablestate
+           self.table_state.select(Some(row * 5 + col - 1));
+        }
         
         //passa alla riga precedente se la colonna è la prima
         //else if row > 0{
@@ -229,6 +229,18 @@ impl App {
                 TileColor::CorrectPlace => tile.color = TileColor::Absent,
                 TileColor::Absent => tile.color = TileColor::WrongPlace,
                 TileColor::WrongPlace => tile.color = TileColor::Normal,
+            }
+        }
+    }
+
+    pub fn go_prev_color(&mut self){
+        let (row, col) = self.selected_tile;
+        if let Some(tile) = self.tiles_grid.tiles.get_mut(row).and_then(|r| r.get_mut(col)) {
+            match tile.color {
+                TileColor::Normal => tile.color = TileColor::WrongPlace,
+                TileColor::CorrectPlace => tile.color = TileColor::Normal,
+                TileColor::Absent => tile.color = TileColor::CorrectPlace,
+                TileColor::WrongPlace => tile.color = TileColor::Absent,
             }
         }
     }

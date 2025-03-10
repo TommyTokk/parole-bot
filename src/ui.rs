@@ -13,6 +13,7 @@ use crate::app::{self, App, CurrentScreen, CurrentlyEditing, TileColor};
 pub fn ui(frame: &mut Frame, app: &mut App) {
     // Update app state first
     app.update();
+    
     // Layout generale: titolo, corpo principale, e footer
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -35,7 +36,6 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     .block(title_block)
     .alignment(Alignment::Center);
 
-
     frame.render_widget(title, chunks[0]);
 
     // Layout principale: sinistra (griglia) e destra (altre informazioni)
@@ -44,10 +44,11 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(chunks[1]);
 
-    let right_chunk = Layout::default()
+    // Split right side vertically, but only use the top half
+    let right_top_half = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(main_chunks[1]);
+        .split(main_chunks[1])[0];  // Only use the top half!
 
     // Blocchi sinistri e destri
     let left_block = Block::default()
@@ -58,14 +59,10 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
 
     render_grid(&main_chunks, app, frame);
 
-    // Blocchi destri
-    let right_upper = Block::default()
+    // Right block - only render in the top half
+    let right_block = Block::default()
         .borders(Borders::ALL)
         .title("Top 3 Suggested Words");
-
-    let right_bottom = Block::default()
-        .borders(Borders::ALL)
-        .title("Right Bottom");
 
     // Create text for top 3 words
     let words_text = if app.is_solving {
@@ -92,22 +89,15 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
             .collect::<Vec<Line>>()
     };
 
-    let right_upper_paragraph = Paragraph::new(words_text)
-        .block(right_upper)
+    let right_paragraph = Paragraph::new(words_text)
+        .block(right_block)
         .alignment(Alignment::Left);
 
-    let right_bottom_paragraph = Paragraph::new(Text::styled(
-        "Right Bottom",
-        Style::default().fg(Color::White),
-    ))
-    .block(right_bottom)
-    .alignment(Alignment::Center);
+    // Only render in the top half of the right side
+    frame.render_widget(right_paragraph, right_top_half);
 
-    frame.render_widget(right_upper_paragraph, right_chunk[0]);
-    frame.render_widget(right_bottom_paragraph, right_chunk[1]);
-
-    // Footer con modalità e hint
-    let current_navigation_text = vec![
+    // Footer con modalità e hint - combined into one centered paragraph
+    let footer_content = vec![
         match app.current_screen {
             CurrentScreen::Main => Span::styled("Normal Mode", Style::default().fg(Color::Green)),
             CurrentScreen::EditingTileChar => {
@@ -134,12 +124,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
                 Span::styled("Not Editing Anything", Style::default().fg(Color::DarkGray))
             }
         },
-    ];
-
-    let mode_footer = Paragraph::new(Line::from(current_navigation_text))
-        .block(Block::default().borders(Borders::ALL));
-
-    let current_keys_hint = {
+        Span::styled(" | ", Style::default().fg(Color::White)),
         match app.current_screen {
             CurrentScreen::Main => Span::styled(
                 "(q) to quit",
@@ -150,26 +135,21 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::EditingTileColor => Span::styled(
-                "(q) to quit | (L/R) change column | (U) change color | (Enter) confirm colors",
+                "(q) to quit | (L/R) change column | (n) next color | (p) prev. color | (Enter) confirm colors",
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::Exiting => Span::styled(
                 "(q) to quit",
                 Style::default().fg(Color::Red),
             ),
-        }
-    };
+        },
+    ];
 
-    let key_notes_footer =
-        Paragraph::new(Line::from(current_keys_hint)).block(Block::default().borders(Borders::ALL));
+    let footer = Paragraph::new(Line::from(footer_content))
+        .block(Block::default().borders(Borders::ALL))
+        .alignment(Alignment::Center);  // Center the footer text
 
-    let footer_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[2]);
-
-    frame.render_widget(mode_footer, footer_chunks[0]);
-    frame.render_widget(key_notes_footer, footer_chunks[1]);
+    frame.render_widget(footer, chunks[2]);
 }
 
 pub fn render_grid(main_chunks: &[Rect], app: &mut App, frame: &mut Frame) {

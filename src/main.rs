@@ -148,13 +148,16 @@ fn run_app<B: Backend>(
                         KeyCode::Char('n') => {
                             app.go_next_color();
                         }
+                        KeyCode::Char('p') => {
+                            app.go_prev_color();
+                        }
                         KeyCode::Tab => {
                             app.current_screen = CurrentScreen::EditingTileChar;
                             app.currently_editing = Some(CurrentlyEditing::TileChar);
                         }
                         KeyCode::Enter => {
                             app.calculate_next_possible_word();
-                            app.current_screen = CurrentScreen::Main;
+                            app.current_screen = CurrentScreen::EditingTileChar;
                             app.currently_editing = None;
                         }
                         _ => {}
