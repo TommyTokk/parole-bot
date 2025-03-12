@@ -263,6 +263,8 @@ impl App {
 
         let word: String = current_row_tile.iter().map(|tile| tile.character).collect();
         let color_state = self.get_color_state(current_row_tile);
+        
+        self.solver.add_used_word(&word.to_lowercase(), &color_state);
 
         let mut solver = self.solver.clone();
         let word_clone = word.to_lowercase();
@@ -277,7 +279,6 @@ impl App {
             tx.send(next_possible_words).unwrap();
         });
 
-        self.solver.add_used_word(&word.to_lowercase(), &color_state);
     }
 
     pub fn get_color_state(&self, row: &Vec<Tile>) -> String{
@@ -293,21 +294,33 @@ impl App {
         color_state
     }
 
-    pub fn update(&mut self){
-        if let Some(receiver) = &self.calculating_receiver{
-            match receiver.try_recv(){
+    pub fn update(&mut self) {
+        // Check for completed calculations
+        if let Some(receiver) = &self.calculating_receiver {
+            match receiver.try_recv() {
                 Ok(words) => {
+                    // Calculation completed successfully
                     self.next_possible_words = words;
                     self.calculating_receiver = None;
                     self.is_solving = false;
+                
+                    
+                    // Force redraw by updating a UI-related field
+                    if let Some(selected) = self.listState.selected() {
+                        self.listState.select(Some(std::cmp::min(selected, self.next_possible_words.len().saturating_sub(1))));
+                    } else if !self.next_possible_words.is_empty() {
+                        self.listState.select(Some(0));
+                    }
                 },
-                Err(mpsc::TryRecvError::Empty) => {},
+                Err(mpsc::TryRecvError::Empty) => {
+                    // Still calculating, do nothing
+                },
                 Err(mpsc::TryRecvError::Disconnected) => {
+                    // Thread ended unexpectedly
                     self.calculating_receiver = None;
                     self.is_solving = false;
                 }
             }
         }
     }
-    
 }

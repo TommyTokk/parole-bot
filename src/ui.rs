@@ -11,8 +11,10 @@ use ratatui::{
 use crate::app::{self, App, CurrentScreen, CurrentlyEditing, TileColor};
 
 pub fn ui(frame: &mut Frame, app: &mut App) {
-    // Update app state first
+    // Make sure to call update first to process any completed calculations
     app.update();
+    
+    // Then proceed with rendering the UI
     
     // Layout generale: titolo, corpo principale, e footer
     let chunks = Layout::default()
