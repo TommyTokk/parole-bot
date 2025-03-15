@@ -12,5 +12,9 @@ rand = "0.8.5"
 csv = "1.1.6"
 
 [[bin]]
-name = "evaluation"
-path = "evaluation/evaluation.rs"
+name = "tui-app"
+path = "src/main.rs"  
+
+[[bin]]
+name = "simulations"
+path = "simulations/simulation.rs"

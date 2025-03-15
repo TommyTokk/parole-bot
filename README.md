@@ -83,22 +83,21 @@ The application is written in Rust, leveraging:
 ## Usage
 
 Start the application by running:
-
 ```bash
-cargo run
+cargo run --bin tui-app #This will run the TUI application
 ```
 ### Modes
 The application provides different modes:
 1. **Normal Mode**
 2. **Editing tile char mode**: In this mode the user can insert the chosen word's chars inside the tiles.
-    - The user can use this commands to interact:
+    - The user can use these commands to interact:
         - (↑/↓/←/→) arrows: Move the cursor between tiles
         - (A-Z) letters: Insert the chosen char in the current position.
         - Enter: Go to the next row
         - Backspace: Delete the char in the current position.
         - Esc: Exit the mode.
 3. **Editing tile color mode**: In this mode the user can insert the chosen word's colors inside the tiles to provide the color code.
-    - The user can use this commands to interact:
+    - The user can use these commands to interact:
         - (↑/↓/←/→) arrows: Move the cursor between tiles
         - N: Move to the next color in the sequence
         - P: Move to the previous color in the sequence
@@ -110,7 +109,38 @@ When a couple (*word*, *color code*) is sent to the solver, the solver will prov
 Repeat the steps until the word is found.
 
 ## Evaluation and Performance
-The solver typically finds the target word within 3-5 attempts for most Italian words.
+
+The solver demonstrates a high success rate, typically identifying the target word within 3-4 attempts. This performance has been rigorously evaluated through statistical analysis across large word samples.
+
+### Performance Analysis
+
+A simulation module is provided in the `simulations` directory to quantify solver effectiveness through controlled testing:
+
+#### Running Performance Simulations
+
+```bash
+cargo run --bin simulations -- -f <path_to_output_csv_file> -i  <iterations>
+```
+
+An example command to run 2000, 5000 and, 10000 iterations would be:
+```bash
+cargo run --bin simulations -- -f results/result.csv -i  2000 5000 10000
+```
+
+### Plotting the results
+In the same directory, there is a python script that can be used to plot the results. To run the script, use the following command:
+```bash
+python plot_results.py -f <path_to_output_csv_file>
+```
+An example of the command is:
+```bash
+python plot_results.py -f results/output.csv
+```
+The script will plot the results saved in the file specified in the `-f` flag. 
+
+![Word Solving Performance Graph](imgs/word_solving_performance.png)
+*An example running three simullations with 2000, 5000 and, 10000 iterations respectively*
+
 
 ## Possible Enhancements
 - Language expansion to support additional word lists
