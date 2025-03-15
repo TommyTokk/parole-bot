@@ -23,3 +23,7 @@ Cargo.lock
 *.log
 
 .DS_Store
+
+results/
+
+imgs/
