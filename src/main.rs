@@ -1,4 +1,4 @@
-use std::{error::Error, io, panic, sync::{mpsc, Arc, atomic::{AtomicBool, Ordering}}};
+use std::{error::Error, io, panic, sync::{Arc, atomic::{AtomicBool, Ordering}}};
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,

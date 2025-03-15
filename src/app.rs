@@ -31,9 +31,9 @@ pub enum TileColor {
 impl TileColor {
     pub fn to_color(&self) -> Color {
         match self {
-            TileColor::CorrectPlace => Color::Rgb((108), (169), (101)),
+            TileColor::CorrectPlace => Color::Rgb(108, 169, 101),
             TileColor::Absent => Color::Red,
-            TileColor::WrongPlace => Color::Rgb((200), (182), (83)),
+            TileColor::WrongPlace => Color::Rgb(200, 182, 83),
             TileColor::Normal => Color::Gray,
         }
     }
@@ -60,7 +60,7 @@ pub struct App {
     pub currently_editing: Option<CurrentlyEditing>,
     pub table_state: TableState,
     pub next_possible_words: Vec<String>,
-    pub listState: ListState,
+    pub list_state: ListState,
     pub solver: Solver,
 }
 
@@ -82,8 +82,8 @@ impl App {
         let mut table_state = TableState::default();
         table_state.select(Some(0));
 
-        let mut listState = ListState::default();
-        listState.select(Some(0));
+        let mut list_state = ListState::default();
+        list_state.select(Some(0));
 
         App {
             calculating_receiver: None,
@@ -94,34 +94,34 @@ impl App {
             currently_editing: None,
             table_state,
             next_possible_words: Vec::new(),
-            listState,
+            list_state,
             solver: Solver::new(),
         }
     }
 
     pub fn insert_char(&mut self, c: char) {
-        // Ottieni le coordinate della cella selezionata
+        // Get the coordinates of the selected cell
         let (row, col) = self.selected_tile;
 
-        // Inserisci il carattere nella cella selezionata
+        // Insert the character in the selected cell
         if let Some(tile) = self.tiles_grid.tiles.get_mut(row).and_then(|r| r.get_mut(col)) {
             tile.character = c;
         } else {
-            // Ritorna immediatamente se la posizione è invalida
+            // Return immediately if the position is invalid
             return;
         }
 
-        // Passa alla cella successiva a destra, se non è l'ultima colonna
+        // Move to the next cell to the right, if not the last column
         if col < 4 {
             self.update_selected_tile(row, col + 1);
-            // Aggiorna lo stato della colonna nel TableState
+            // Update column state in TableState
             self.table_state.select(Some(row * 5 + col + 1));
         } 
     }
     
     
     pub fn update_selected_tile(&mut self, nrow: usize, ncol: usize) {
-        // Controlla che la posizione sia valida prima di aggiornare la selezione
+        // Check that the position is valid before updating the selection
         if nrow < self.tiles_grid.tiles.len() && ncol < self.tiles_grid.tiles[nrow].len() {
             // Deselect the current tile
             let (row, col) = self.selected_tile;
@@ -138,10 +138,10 @@ impl App {
     }
     
     pub fn remove_char(&mut self) {
-        // Ottieni le coordinate della cella selezionata
+        // Get the coordinates of the selected cell
         let (row, col) = self.selected_tile;
         
-        // Rimuovi il carattere dalla cella selezionata
+        // Remove the character from the selected cell
         if let Some(tile) = self.tiles_grid.tiles.get_mut(row).and_then(|r| r.get_mut(col)) {
             tile.character = ' ';
         }
@@ -149,14 +149,14 @@ impl App {
         // Go to the previous cell if not in the first row
         if col > 0 {
             self.update_selected_tile(row, col - 1);
-           // update the tablestate
+           // Update the tablestate
            self.table_state.select(Some(row * 5 + col - 1));
         }
         
-        //passa alla riga precedente se la colonna è la prima
+        // Move to the previous row if this is the first column
         //else if row > 0{
         //    self.update_selected_tile(row - 1, 4);
-        //    // Aggiorna lo stato della riga nel TableState
+        //    // Update row state in TableState
         //    self.table_state.select(Some((row - 1) * 5 + 4));
         //}
         
@@ -177,46 +177,46 @@ impl App {
     }
 
     pub fn go_prev_row(&mut self) {
-        // Ottieni le coordinate della cella selezionata
+        // Get the coordinates of the selected cell
         let (row, col) = self.selected_tile;
         
         if self.current_screen == CurrentScreen::EditingTileChar{
-            // Passa alla riga precedente, se non è la prima riga e se la colonna è la prima
+            // Move to the previous row if not the first row and if column is the first
             if row > 0 || col == 0 {
                 self.update_selected_tile(row - 1, 4);
-                // Aggiorna lo stato della riga nel TableState
+                // Update row state in TableState
                 self.table_state.select(Some((row - 1) * 5 + 4));
             }
         }else{
-            // Passa alla riga precedente, se non è la prima riga
+            // Move to the previous row if not the first row
             if row > 0 {
                 self.update_selected_tile(row - 1, col);
-                // Aggiorna lo stato della riga nel TableState
+                // Update row state in TableState
                 self.table_state.select(Some((row - 1) * 5 + col));
             }
         }
     }
 
     pub fn go_prev_col(&mut self) {
-        // Ottieni le coordinate della cella selezionata
+        // Get the coordinates of the selected cell
         let (row, col) = self.selected_tile;
 
-        // Passa alla colonna precedente, se non è la prima colonna
+        // Move to the previous column if not the first column
         if col > 0 {
             self.update_selected_tile(row, col - 1);
-            // Aggiorna lo stato della colonna nel TableState
+            // Update column state in TableState
             self.table_state.select(Some(row * 5 + col - 1));
         }
     }
 
     pub fn go_next_col(&mut self) {
-        // Ottieni le coordinate della cella selezionata
+        // Get the coordinates of the selected cell
         let (row, col) = self.selected_tile;
 
-        // Passa alla colonna successiva, se non è l'ultima colonna
+        // Move to the next column if not the last column
         if col < 4 {
             self.update_selected_tile(row, col + 1);
-            // Aggiorna lo stato della colonna nel TableState
+            // Update column state in TableState
             self.table_state.select(Some(row * 5 + col + 1));
         }
     }
@@ -278,7 +278,6 @@ impl App {
             let next_possible_words = solver.get_next_possible_words(&word_clone, &color_state_clone);
             tx.send(next_possible_words).unwrap();
         });
-
     }
 
     pub fn get_color_state(&self, row: &Vec<Tile>) -> String{
@@ -306,10 +305,10 @@ impl App {
                 
                     
                     // Force redraw by updating a UI-related field
-                    if let Some(selected) = self.listState.selected() {
-                        self.listState.select(Some(std::cmp::min(selected, self.next_possible_words.len().saturating_sub(1))));
+                    if let Some(selected) = self.list_state.selected() {
+                        self.list_state.select(Some(std::cmp::min(selected, self.next_possible_words.len().saturating_sub(1))));
                     } else if !self.next_possible_words.is_empty() {
-                        self.listState.select(Some(0));
+                        self.list_state.select(Some(0));
                     }
                 },
                 Err(mpsc::TryRecvError::Empty) => {

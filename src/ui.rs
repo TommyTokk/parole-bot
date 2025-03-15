@@ -1,6 +1,3 @@
-use std::cell;
-
-use crossterm::queue;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
@@ -8,25 +5,23 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Paragraph, Row, Table},
     Frame,
 };
-use crate::app::{self, App, CurrentScreen, CurrentlyEditing, TileColor};
+use crate::app::{App, CurrentScreen};
 
 pub fn ui(frame: &mut Frame, app: &mut App) {
     // Make sure to call update first to process any completed calculations
     app.update();
     
-    // Then proceed with rendering the UI
-    
-    // Layout generale: titolo, corpo principale, e footer
+    // General layout: title, main body, and footer
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // Titolo
-            Constraint::Min(1),     // Corpo principale
+            Constraint::Length(3),  // Title
+            Constraint::Min(1),     // Main body
             Constraint::Length(3),  // Footer
         ])
         .split(frame.area());
 
-    // Titolo
+    // Title
     let title_block = Block::default()
         .borders(Borders::ALL)
         .style(Style::default());
@@ -40,7 +35,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
 
     frame.render_widget(title, chunks[0]);
 
-    // Layout principale: sinistra (griglia) e destra (altre informazioni)
+    // Main layout: left (grid) and right (other information)
     let main_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -52,10 +47,10 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(main_chunks[1])[0];  // Only use the top half!
 
-    // Blocchi sinistri e destri
+    // Left and right blocks
     let left_block = Block::default()
         .borders(Borders::ALL)
-        .title("Inserimento Parole");
+        .title("Words Grid");
 
     frame.render_widget(left_block, main_chunks[0]);
 
@@ -98,7 +93,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     // Only render in the top half of the right side
     frame.render_widget(right_paragraph, right_top_half);
 
-    // Footer con modalità e hint - combined into one centered paragraph
+    // Footer with mode and hints - combined into one centered paragraph
     let footer_content = vec![
         match app.current_screen {
             CurrentScreen::Main => Span::styled("Normal Mode", Style::default().fg(Color::Green)),
@@ -111,21 +106,21 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
             CurrentScreen::Exiting => Span::styled("Exiting", Style::default().fg(Color::LightRed)),
         }
         .to_owned(),
-        Span::styled(" | ", Style::default().fg(Color::White)),
-        {
-            if let Some(editing) = &app.currently_editing {
-                match editing {
-                    CurrentlyEditing::TileColor => {
-                        Span::styled("Editing Tile Color", Style::default().fg(Color::Yellow))
-                    }
-                    CurrentlyEditing::TileChar => {
-                        Span::styled("Editing Tile Char", Style::default().fg(Color::Yellow))
-                    }
-                }
-            } else {
-                Span::styled("Not Editing Anything", Style::default().fg(Color::DarkGray))
-            }
-        },
+        // Span::styled(" | ", Style::default().fg(Color::White)),
+        // {
+        //     if let Some(editing) = &app.currently_editing {
+        //         match editing {
+        //             CurrentlyEditing::TileColor => {
+        //                 Span::styled("Editing Tile Color", Style::default().fg(Color::Yellow))
+        //             }
+        //             CurrentlyEditing::TileChar => {
+        //                 Span::styled("Editing Tile Char", Style::default().fg(Color::Yellow))
+        //             }
+        //         }
+        //     } else {
+        //         Span::styled("Not Editing Anything", Style::default().fg(Color::DarkGray))
+        //     }
+        // },
         Span::styled(" | ", Style::default().fg(Color::White)),
         match app.current_screen {
             CurrentScreen::Main => Span::styled(
@@ -133,11 +128,11 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::EditingTileChar => Span::styled(
-                "(q) quit | (U/D) change row | (L/R) change column | (Enter) next row | (Esc) exit editing",
+                "(q) quit | (↑/↓/←/→) change tile | (Enter) next row | (Esc) exit mode",
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::EditingTileColor => Span::styled(
-                "(q) to quit | (L/R) change column | (n) next color | (p) prev. color | (Enter) confirm colors",
+                "(q) to quit | (↑/↓/←/→) change tile | (n/p) change color | (Enter) confirm colors | (Esc) exit mode",
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::Exiting => Span::styled(

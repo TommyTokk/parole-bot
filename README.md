@@ -92,15 +92,14 @@ The application provides different modes:
 1. **Normal Mode**
 2. **Editing tile char mode**: In this mode the user can insert the chosen word's chars inside the tiles.
     - The user can use this commands to interact:
-        - Left/Right arrow: Move the cursor to the left/right in the same row.
-        - Up/Down arrow: Move the cursor to the up/down in the same column.
+        - (↑/↓/←/→) arrows: Move the cursor between tiles
+        - (A-Z) letters: Insert the chosen char in the current position.
         - Enter: Go to the next row
         - Backspace: Delete the char in the current position.
         - Esc: Exit the mode.
 3. **Editing tile color mode**: In this mode the user can insert the chosen word's colors inside the tiles to provide the color code.
     - The user can use this commands to interact:
-        - Left/Right arrow: Move the cursor to the left/right in the same row.
-        - Up/Down arrow: Move the cursor to the up/down in the same column.
+        - (↑/↓/←/→) arrows: Move the cursor between tiles
         - N: Move to the next color in the sequence
         - P: Move to the previous color in the sequence
         - Enter: Send the word and the color code to the solver.
