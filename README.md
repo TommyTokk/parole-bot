@@ -112,9 +112,6 @@ Repeat the steps until the word is found.
 ## Evaluation and Performance
 The solver typically finds the target word within 3-5 attempts for most Italian words.
 
-## Next Steps
-- Create an evaluation script to test the solver with random words.
-
 ## Possible Enhancements
 - Language expansion to support additional word lists
 - Local scoring history and statistics
