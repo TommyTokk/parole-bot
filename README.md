@@ -138,7 +138,7 @@ python plot_results.py -f results/output.csv
 ```
 The script will plot the results saved in the file specified in the `-f` flag. 
 
-![Word Solving Performance Graph](imgs/word_solving_performance.png)
+![Word Solving Performance Graph](example_imgs/word_solving_performance.png)
 *An example running three simullations with 2000, 5000 and, 10000 iterations respectively*
 
 
