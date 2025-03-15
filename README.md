@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Parole-bot is a terminal-based application designed to solve the Italian version of the popular word-guessing game "Wordle" ([Italian wordle project](https://pietroppeter.github.io/wordle-it/)). Using principles from information theory, the solver strategically identifies optimal word candidates to minimize the number of attempts required to discover the target word.
+Parole-bot is a terminal-based application designed to solve the Italian version of the popular word-guessing game "Wordle" ([Italian wordle repository]([https://pietroppeter.github.io/wordle-it/](https://github.com/pietroppeter/wordle-it))). Using principles from information theory, the solver strategically identifies optimal word candidates to minimize the number of attempts required to discover the target word.
 
 ## Architecture
 
