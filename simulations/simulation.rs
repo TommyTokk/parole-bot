@@ -7,6 +7,7 @@ use std::fs::File;
 use rand::seq::SliceRandom;
 use csv;
 include!("../src/solver.rs");
+//include!("../assets/word_freqs_big.rs");
 
 const DEF_MAX_ITERATIONS: [i16; 3] = [50, 100, 200];
 
@@ -188,7 +189,7 @@ pub fn simulate_game(max_iterations: i16) -> HashMap<String, i16> {
 
         // Handle case where word wasn't found in 6 attempts
         if attempt > 6 {
-            println!("Word not found in 6 attempts");
+            //println!("Word not found in 6 attempts");
             let class = classes.entry(">6".to_string()).or_insert(0);
             *class += 1;
         }
@@ -198,6 +199,23 @@ pub fn simulate_game(max_iterations: i16) -> HashMap<String, i16> {
     }
 
     classes
+}
+
+pub fn words_intersection(word_freqs: [(&str, f64); 41730], words: Vec<String>) -> HashMap<&str, f64> {
+    //Return an hashmap containing all the words in words that appear in word_freqs
+    let mut res: HashMap<&str, f64> = HashMap::new();
+    let mut eq = false;
+    for word in words.iter(){
+        for (w, f) in word_freqs.iter(){
+            if word == w{
+                res.insert(w, *f);
+                eq = true;
+            }
+        }
+        if !eq {println!("{}", word);}
+        eq = false;
+    }
+    res
 }
 
 // New function to append to the CSV file

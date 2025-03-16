@@ -47,14 +47,18 @@ After each guess, the solver filters the word list using a three-step process:
 
 ## Word Selection Algorithm
 
-The selection algorithm balances information gain with word frequency:
-- **Filter candidate words** based on all accumulated constraints.
-- **Calculate entropy** for each remaining candidate.
-- **Tiebreaker:** For words with similar entropy values (difference < 0.05), use word frequency to favor more common words.
-- **Sort words** by this composite score.
-- **Return suggestions:** The highest-scoring words are presented as suggestions.
+The selection algorithm balances information gain with word frequency using a weighted scoring approach:
 
-This approach yields a powerful balance between theoretical information gain and practical likelihood of being the target word.
+1. **Filter candidate words** based on all accumulated constraints.
+2. **Calculate entropy** for each remaining candidate.
+3. **Apply weighted scoring:**
+   - Normalize both entropy and frequency values to a 0-1 range
+   - Apply weights: 80% for entropy and 20% for frequency 
+   - Combine into a single score that balances information gain with word commonality
+4. **Sort by combined score** with higher scores ranked first.
+5. **Return suggestions:** The highest-scoring words are presented to the user.
+
+This sophisticated approach ensures that suggestions are both informative (high entropy) and practical (reasonably common words), prioritizing theoretical effectiveness while still favoring words likely to be the answer.
 
 ## Features
 
@@ -81,6 +85,12 @@ The application is written in Rust, leveraging:
 - **Performance Optimization:** Efficient algorithms for entropy calculation and word filtering.
 
 ## Usage
+Clone this repository and navigate to the project directory:
+```bash
+git clone
+cd parole-bot
+```
+### Running the Application
 
 Start the application by running:
 ```bash
@@ -110,7 +120,7 @@ Repeat the steps until the word is found.
 
 ## Evaluation and Performance
 
-The solver demonstrates a high success rate, typically identifying the target word within 3-4 attempts. This performance has been rigorously evaluated through statistical analysis across large word samples.
+The solver demonstrates a high success rate, typically identifying the target word within 3-4 attempts. This performance has been evaluated through statistical analysis across word samples.
 
 ### Performance Analysis
 
@@ -139,7 +149,7 @@ python plot_results.py -f results/output.csv
 The script will plot the results saved in the file specified in the `-f` flag. 
 
 ![Word Solving Performance Graph](example_imgs/word_solving_performance.png)
-*An example running three simullations with 2000, 5000 and, 10000 iterations respectively*
+*An example running three simulations with 2000, 5000 and, 10000 iterations respectively*
 
 
 ## Possible Enhancements

@@ -1,5 +1,5 @@
 
-pub const WORDS_FREQS: [(&str, f64); 41730] = [
+pub const WORDS_FREQS_BIG: [(&str, f64); 41730] = [
     ("tutto", 0.999995),
     ("della", 0.999994),
     ("fatto", 0.999994),

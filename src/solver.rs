@@ -1,6 +1,6 @@
 include!("../assets/valid_guesses.rs");
 include!("../assets/wordlist.rs");
-include!("../assets/letter_frequencies.rs");
+include!("../assets/words_freqs.rs");
 
 use std::collections::HashMap;
 use std::fs::OpenOptions;
@@ -21,7 +21,7 @@ pub struct Solver {
     pub words: Vec<String>,
     //pub valid_guesses: Vec<String>,
     pub word_length: usize,
-    pub word_frequencies: HashMap<char, f64>,
+    pub word_frequencies: HashMap<String, f64>,
     pub previous_words: Vec<(String, String)>,
     // Add these fields to track accumulated constraints
     accumulated_absent_chars: Vec<(char, usize)>,
@@ -36,7 +36,7 @@ impl Solver {
             words: words_copy.clone(),
             //valid_guesses: VALID_GUESSES.iter().map(|&s| s.to_string()).collect(),
             word_length: 5,
-            word_frequencies: LETTER_FREQUENCIES.iter().copied().collect(),
+            word_frequencies: WORDS_FREQS.iter().map(|(k, v)| (k.to_string(), *v)).collect(),
             previous_words: Vec::new(),
             // Add these fields to track accumulated constraints
             accumulated_absent_chars: Vec::new(),
@@ -170,17 +170,42 @@ impl Solver {
 
         // Apply all accumulated constraints during filtering
         let filtered_words = self.filter_words_with_all_constraints(&self.words);
-        let mut word_entropy: Vec<(String, f64)> = Vec::new();
-
-        // Calculate entropy on filtered words
+        
+        // Calculate entropy and prepare combined scoring
+        let mut word_scores: Vec<(String, f64, f64, f64)> = Vec::new(); // (word, entropy, frequency, combined_score)
+        
+        // Find max entropy and max frequency for normalization
+        let mut max_entropy: f64 = 0.0;
+        let mut max_frequency: f64 = 0.0;
+        
         for candidate in &filtered_words {
             let entropy = self.calculate_expected_entropy(candidate, &filtered_words);
-            word_entropy.push((candidate.to_string(), entropy));
+            let frequency = self.word_frequencies.get(candidate).copied().unwrap_or(0.0);
+            
+            max_entropy = max_entropy.max(entropy);
+            max_frequency = max_frequency.max(frequency);
+            
+            word_scores.push((candidate.to_string(), entropy, frequency, 0.0)); // Will calculate score later
         }
-
-        // Sort by entropy and return
-        word_entropy.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-        word_entropy.into_iter().map(|(word, _)| word).collect()
+        
+        // Calculate combined scores with weights
+        let entropy_weight = 0.8;  // Prioritize entropy (information gain)
+        let frequency_weight = 0.2; // But also consider frequency
+        
+        for score in &mut word_scores {
+            // Normalize values between 0 and 1
+            let normalized_entropy = if max_entropy > 0.0 { score.1 / max_entropy } else { 0.0 };
+            let normalized_frequency = if max_frequency > 0.0 { score.2 / max_frequency } else { 0.0 };
+            
+            // Weighted combination
+            score.3 = (entropy_weight * normalized_entropy) + (frequency_weight * normalized_frequency);
+        }
+        
+        // Sort by combined score (higher is better)
+        word_scores.sort_by(|a, b| b.3.partial_cmp(&a.3).unwrap_or(std::cmp::Ordering::Equal));
+        
+        // Return just the words
+        word_scores.into_iter().map(|(word, _, _, _)| word).collect()
     }
 
     // New method to update accumulated constraints
