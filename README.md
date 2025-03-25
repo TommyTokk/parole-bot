@@ -87,7 +87,7 @@ The application is written in Rust, leveraging:
 ## Usage
 Clone this repository and navigate to the project directory:
 ```bash
-git clone
+git clone https://github.com/TommyTokk/parole-bot.git
 cd parole-bot
 ```
 ### Running the Application
